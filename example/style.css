@@ -1,0 +1,9 @@
+div.myseisplot {
+  height: 100px;
+}
+
+path.seispath {
+  stroke: skyblue;
+  fill: none;
+  stroke-width: 1px;
+}
