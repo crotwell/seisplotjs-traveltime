@@ -5,7 +5,7 @@ export let IRIS_HOST = "service.iris.edu";
 
 export class TraveltimeQuery {
   constructor(host) {
-    this._protocol = 'http';
+    this._protocol = 'http:';
     this._host = host;
     if (! host) {
       this._host = IRIS_HOST;
@@ -97,7 +97,11 @@ export class TraveltimeQuery {
   }
 
   formURL() {
-    let url = this.protocol()+"://"+this.host()+"/irisws/traveltime/1/query?";
+    let colon = ":";
+    if (this.protocol().endsWith(colon)) {
+      colon = "";
+    }
+    let url = this.protocol()+colon+"//"+this.host()+"/irisws/traveltime/1/query?";
     url = url +"noheader=true&";
     if (this._evdepth) { url = url+"evdepth="+this.evdepth()+"&"; } 
     if (this._stalat && this._stalon) {
