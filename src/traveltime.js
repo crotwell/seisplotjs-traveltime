@@ -96,6 +96,10 @@ export class TraveltimeQuery {
     return promise;
   }
 
+  makeParam(name, val) {
+    return name+"="+encodeURIComponent(val)+"&";
+  }
+
   formURL() {
     let colon = ":";
     if (this.protocol().endsWith(colon)) {
@@ -103,17 +107,20 @@ export class TraveltimeQuery {
     }
     let url = this.protocol()+colon+"//"+this.host()+"/irisws/traveltime/1/query?";
     url = url +"noheader=true&";
-    if (this._evdepth) { url = url+"evdepth="+this.evdepth()+"&"; } 
+    if (this._evdepth) { url = url+this.makeParam("evdepth", this.evdepth()); } 
     if (this._stalat && this._stalon) {
-      url = url+"staloc=["+this.stalat()+","+this.stalon()+"]&";
+      url = url+this.makeParam("staloc", "["+this.stalat()+","+this.stalon()+"]");
     }
     if (this._evlat && this._evlon) {
-      url = url+"evloc=["+this.evlat()+","+this.evlon()+"]&";
+      url = url+this.makeParam("evloc", "["+this.evlat()+","+this.evlon()+"]");
     }
-    if (this._distdeg) { url = url+"distdeg="+this.distdeg()+"&";}
-    if (this._model) { url = url+"model="+this.model()+"&";}
-    if (this._phases) { url = url+"phases="+this.phases()+"&";}
-    return url.substr(0, url.length-1); // zap last & or ?
+    if (this._distdeg) { url = url+this.makeParam("distdeg", this.distdeg());}
+    if (this._model) { url = url+this.makeParam("model", this.model());}
+    if (this._phases) { url = url+this.makeParam("phases", this.phases());}
+    if (url.endsWith('&') || url.endsWith('?')) {
+      url = url.substr(0, url.length-1); // zap last & or ?
+    }
+    return url;
   }
 
   /** converts to ISO8601 but removes the trailing Z as FDSN web services 
