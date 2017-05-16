@@ -4,7 +4,7 @@
   "description": "Calculation of Earthquake wave travel times using the IRIS traveltime web service.",
   "main": "./lib/traveltime.js",
   "dependencies": {
-    "rsvp": "^3.3.3"
+    "rsvp": "^3.5.0"
   },
   "scripts": {
     "lint": "eslint 'src/*.js'",
