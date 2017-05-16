@@ -1,6 +1,6 @@
 {
   "name": "seisplotjs-traveltime",
-  "version": "0.0.1-SNAPSHOT",
+  "version": "1.0.0",
   "description": "Calculation of Earthquake wave travel times using the IRIS traveltime web service.",
   "main": "./lib/traveltime.js",
   "dependencies": {
