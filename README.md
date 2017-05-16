@@ -2,7 +2,9 @@
 Calculation of Earthquake wave travel times using the IRIS traveltime web service.
 
 
-Example:
+See the example dir for a simple example.
+
+
 
 
 
