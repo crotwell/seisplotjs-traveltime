@@ -1,6 +1,6 @@
 {
   "name": "seisplotjs-traveltime",
-  "version": "1.0.0",
+  "version": "1.0.1-SNAPSHOT",
   "description": "Calculation of Earthquake wave travel times using the IRIS traveltime web service.",
   "main": "./lib/traveltime.js",
   "dependencies": {
@@ -10,7 +10,7 @@
     "lint": "eslint 'src/*.js'",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "babel --presets es2015 -d lib/ src/",
-    "standalone": "browserify src/traveltime.js --standalone seisplotjs_traveltime -o seisplotjs_traveltime_01s_standalone.js -t [ babelify --presets [ es2015 ] ]",
+    "standalone": "browserify src/traveltime.js --standalone seisplotjs_traveltime -o seisplotjs_traveltime_${npm_package_version}_standalone.js -t [ babelify --presets [ es2015 ] ]",
     "prepublish": "npm run compile"
   },
   "repository": {
