@@ -58,7 +58,7 @@ export class TraveltimeQuery {
   query() {
     let mythis = this;
     return this.queryRawText().then(function(rawText) {
-        // parsing of text is temporary until IRIS 
+        // parsing of text is temporary until IRIS
         // traveltime ws supports json output from TauP
         let lines = rawText.match(/[^\r\n]+/g);
         let out = {
@@ -107,7 +107,7 @@ export class TraveltimeQuery {
     }
     let url = this.protocol()+colon+"//"+this.host()+"/irisws/traveltime/1/query?";
     url = url +"noheader=true&";
-    if (this._evdepth) { url = url+this.makeParam("evdepth", this.evdepth()); } 
+    if (this._evdepth) { url = url+this.makeParam("evdepth", this.evdepth()); }
     if (this._stalat && this._stalon) {
       url = url+this.makeParam("staloc", "["+this.stalat()+","+this.stalon()+"]");
     }
@@ -121,12 +121,5 @@ export class TraveltimeQuery {
       url = url.substr(0, url.length-1); // zap last & or ?
     }
     return url;
-  }
-
-  /** converts to ISO8601 but removes the trailing Z as FDSN web services 
-    do not allow that. */
-  toIsoWoZ(date) {
-    let out = date.toISOString();
-    return out.substring(0, out.length-1);
   }
 }
