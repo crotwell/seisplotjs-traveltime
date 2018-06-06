@@ -1,47 +1,74 @@
+// @flow
 
 import RSVP from 'rsvp';
+import {hasArgs, hasNoArgs, isStringArg, isNumArg, stringify, isDef } from './util';
 
 export let IRIS_HOST = "service.iris.edu";
 
 export class TraveltimeQuery {
-  constructor(host) {
+  /** @private */
+  _specVersion: number;
+  /** @private */
+  _protocol: string;
+  /** @private */
+  _host: string;
+  /** @private */
+  _nodata: number;
+  /** @private */
+  _evdepth: number;
+  /** @private */
+  _distdeg: number;
+  /** @private */
+  _model: string;
+  /** @private */
+  _phases: string;
+  /** @private */
+  _stalat: number;
+  /** @private */
+  _stalon: number;
+  /** @private */
+  _evlat: number;
+  /** @private */
+  _evlon: number;
+  constructor(host :?string) {
     this._protocol = 'http:';
-    this._host = host;
     if (! host) {
       this._host = IRIS_HOST;
+    } else {
+      this._host = host;
     }
   }
-  protocol(value) {
-    return arguments.length ? (this._protocol = value, this) : this._protocol;
+  protocol(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._protocol = value, this) : this._protocol;
   }
-  host(value) {
-    return arguments.length ? (this._host = value, this) : this._host;
+  host(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._host = value, this) : this._host;
   }
-  evdepth(value) {
-    return arguments.length ? (this._evdepth = value, this) : this._evdepth;
+  evdepth(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._evdepth = value, this) : this._evdepth;
   }
-  distdeg(value) {
-    return arguments.length ? (this._distdeg = value, this) : this._distdeg;
+  distdeg(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._distdeg = value, this) : this._distdeg;
   }
-  model(value) {
-    return arguments.length ? (this._model = value, this) : this._model;
+  model(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._model = value, this) : this._model;
   }
-  phases(value) {
-    return arguments.length ? (this._phases = value, this) : this._phases;
+  phases(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._phases = value, this) : this._phases;
   }
-  stalat(value) {
-    return arguments.length ? (this._stalat = value, this) : this._stalat;
+  stalat(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._stalat = value, this) : this._stalat;
   }
-  stalon(value) {
-    return arguments.length ? (this._stalon = value, this) : this._stalon;
+  stalon(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._stalon = value, this) : this._stalon;
   }
-  evlat(value) {
-    return arguments.length ? (this._evlat = value, this) : this._evlat;
+  evlat(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._evlat = value, this) : this._evlat;
   }
-  evlon(value) {
-    return arguments.length ? (this._evlon = value, this) : this._evlon;
+  evlon(value?: number) :number | TraveltimeQuery {
+    return hasArgs(value) ? (this._evlon = value, this) : this._evlon;
   }
-  convertToArrival(ttimeline) {
+  convertToArrival(ttimeline :string) {
     let items = ttimeline.trim().split(/\s+/);
     return {
       distdeg: parseFloat(items[0]),
@@ -96,30 +123,86 @@ export class TraveltimeQuery {
     return promise;
   }
 
-  makeParam(name, val) {
-    return name+"="+encodeURIComponent(val)+"&";
+  makeParam(name :string, val :mixed) :string {
+    return name+"="+encodeURIComponent(stringify(val))+"&";
   }
 
-  formURL() {
+  formBaseURL() :string {
     let colon = ":";
-    if (this.protocol().endsWith(colon)) {
+    if (this._protocol.endsWith(colon)) {
       colon = "";
     }
-    let url = this.protocol()+colon+"//"+this.host()+"/irisws/traveltime/1/query?";
+    let url = this._protocol+colon+"//"+this._host+"/irisws/traveltime/1/";
+    return url;
+  }
+
+  formURL() :string {
+    let url = this.formBaseURL()+'query?';
     url = url +"noheader=true&";
-    if (this._evdepth) { url = url+this.makeParam("evdepth", this.evdepth()); }
-    if (this._stalat && this._stalon) {
-      url = url+this.makeParam("staloc", "["+this.stalat()+","+this.stalon()+"]");
+    if (isDef(this._evdepth)) { url = url+this.makeParam("evdepth", this.evdepth()); }
+    if (isDef(this._stalat) && isDef(this._stalon)) {
+      url = url+this.makeParam("staloc", "["+stringify(this.stalat())+","+stringify(this.stalon())+"]");
     }
-    if (this._evlat && this._evlon) {
-      url = url+this.makeParam("evloc", "["+this.evlat()+","+this.evlon()+"]");
+    if (isDef(this._evlat) && isDef(this._evlon)) {
+      url = url+this.makeParam("evloc", "["+stringify(this.evlat())+","+stringify(this.evlon())+"]");
     }
-    if (this._distdeg) { url = url+this.makeParam("distdeg", this.distdeg());}
-    if (this._model) { url = url+this.makeParam("model", this.model());}
-    if (this._phases) { url = url+this.makeParam("phases", this.phases());}
+    if (isDef(this._distdeg)) { url = url+this.makeParam("distdeg", this.distdeg());}
+    if (isDef(this._model)) { url = url+this.makeParam("model", this.model());}
+    if (isDef(this._phases)) { url = url+this.makeParam("phases", this.phases());}
     if (url.endsWith('&') || url.endsWith('?')) {
       url = url.substr(0, url.length-1); // zap last & or ?
     }
     return url;
+  }
+
+
+  queryTauPVersion() :string {
+    let mythis = this;
+    let promise = new RSVP.Promise(function(resolve, reject) {
+      let client = new XMLHttpRequest();
+      let url = mythis.formTauPVersionURL();
+      client.open("GET", url);
+      client.onreadystatechange = handler;
+      client.responseType = "text";
+      client.setRequestHeader("Accept", "text/plain");
+      client.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) { resolve(this.response); }
+          else { reject(this); }
+        }
+      }
+    });
+    return promise;
+  }
+
+  formTauPVersionURL() :string {
+    return this.formBaseURL()+'taupversion';
+  }
+
+  queryWADL() :Promise<string> {
+    let mythis = this;
+    let promise = new RSVP.Promise(function(resolve, reject) {
+      let client = new XMLHttpRequest();
+      let url = mythis.formWADLURL();
+      client.open("GET", url);
+      client.onreadystatechange = handler;
+      client.responseType = "text";
+      client.setRequestHeader("Accept", "application/xml");
+      client.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) { resolve(this.response); }
+          else { reject(this); }
+        }
+      }
+    });
+    return promise;
+  }
+
+  formWADLURL() :string {
+    return this.formBaseURL()+'application.wadl';
   }
 }
