@@ -5,9 +5,13 @@ import {hasArgs, hasNoArgs, isStringArg, isNumArg, stringify, isDef } from './ut
 
 export let IRIS_HOST = "service.iris.edu";
 
+export const TEXT_FORMAT = "text";
+export const JSON_FORMAT = "json";
+export const SVG_FORMAT = "svg";
+
 export class TraveltimeQuery {
   /** @private */
-  _specVersion: number;
+  _specVersion: string;
   /** @private */
   _protocol: string;
   /** @private */
@@ -30,19 +34,26 @@ export class TraveltimeQuery {
   _evlat: number;
   /** @private */
   _evlon: number;
+  /** @private */
+  _format: string;
   constructor(host :?string) {
+    this._specVersion = "1";
     this._protocol = 'http:';
     if (! host) {
       this._host = IRIS_HOST;
     } else {
       this._host = host;
     }
+    this._format = JSON_FORMAT;
   }
   protocol(value?: string) :string | TraveltimeQuery {
     return hasArgs(value) ? (this._protocol = value, this) : this._protocol;
   }
   host(value?: string) :string | TraveltimeQuery {
     return hasArgs(value) ? (this._host = value, this) : this._host;
+  }
+  specVersion(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._specVersion = value, this) : this._specVersion;
   }
   evdepth(value?: number) :number | TraveltimeQuery {
     return hasArgs(value) ? (this._evdepth = value, this) : this._evdepth;
@@ -68,6 +79,9 @@ export class TraveltimeQuery {
   evlon(value?: number) :number | TraveltimeQuery {
     return hasArgs(value) ? (this._evlon = value, this) : this._evlon;
   }
+  format(value?: string) :string | TraveltimeQuery {
+    return hasArgs(value) ? (this._format = value, this) : this._format;
+  }
   convertToArrival(ttimeline :string) {
     let items = ttimeline.trim().split(/\s+/);
     return {
@@ -82,45 +96,70 @@ export class TraveltimeQuery {
     };
   }
 
-  query() {
-    let mythis = this;
-    return this.queryRawText().then(function(rawText) {
-        // parsing of text is temporary until IRIS
-        // traveltime ws supports json output from TauP
-        let lines = rawText.match(/[^\r\n]+/g);
-        let out = {
-          model: mythis.model(),
-          sourcedepth: mythis.evdepth(),
-          receiverdepth: 0,
-          phases: mythis.phases(),
-          arrivals: []
-        };
-        for (let i=0; i<lines.length; i++) {
-          out.arrivals[i] = mythis.convertToArrival(lines[i]);
+  queryText() :Promise<string> {
+    this.format(TEXT_FORMAT);
+    return fetch(this.formURL())
+      .then(response => {
+        if (response.ok) {
+          return response.text();
+        } else {
+          throw new Error("Fetching over network was not ok: "+response.status+" "+response.statusText);
         }
-        return out;
-    });
+      });
   }
-
-  queryRawText() {
-    let mythis = this;
-    let promise = new RSVP.Promise(function(resolve, reject) {
-      let client = new XMLHttpRequest();
-      let url = mythis.formURL();
-      client.open("GET", url);
-      client.onreadystatechange = handler;
-      client.responseType = "text";
-      client.setRequestHeader("Accept", "text/plain");
-      client.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) { resolve(this.response); }
-          else { reject(this); }
+  queryJson() :Promise<any> {
+    this.format(JSON_FORMAT);
+    return fetch(this.formURL())
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Fetching over network was not ok: "+response.status+" "+response.statusText);
         }
-      }
-    });
-    return promise;
+      });
+  }
+  querySvg() :Promise<Element> {
+    this.format(SVG_FORMAT);
+    return fetch(this.formURL())
+      .then(response => {
+        if (response.ok) {
+          return response.text()
+            .then(textResponse => (new window.DOMParser()).parseFromString(textResponse, "text/xml"))
+            .then(xml => {
+              let elArray = xml.getElementsByTagName("svg");
+              if (elArray.length > 0) {
+                return elArray[0];
+              } else {
+                throw new Error("Can't find svg element in response");
+              }
+            });
+
+        } else {
+          throw new Error("Fetching over network was not ok: "+response.status+" "+response.statusText);
+        }
+      });
+  }
+  queryWadl() :Promise<Element> {
+    return fetch(this.formWadlURL())
+      .then(response => {
+        if (response.ok) {
+          return response.text()
+            .then(textResponse => (new window.DOMParser()).parseFromString(textResponse, "text/xml"));
+        } else {
+          throw new Error("Fetching over network was not ok: "+response.status+" "+response.statusText);
+        }
+      });
+  }
+  query() :Promise<any> {
+    if (this._format === JSON_FORMAT) {
+      return this.queryJson();
+    } else if (this._format === SVG_FORMAT) {
+      return this.querySvg();
+    } else if (this._format === TEXT_FORMAT) {
+      return this.queryText();
+    } else {
+      throw new Error("Unknown format: "+this._format);
+    }
   }
 
   makeParam(name :string, val :mixed) :string {
@@ -132,7 +171,7 @@ export class TraveltimeQuery {
     if (this._protocol.endsWith(colon)) {
       colon = "";
     }
-    let url = this._protocol+colon+"//"+this._host+"/irisws/traveltime/1/";
+    let url = this._protocol+colon+"//"+this._host+"/irisws/traveltime/"+this._specVersion+"/";
     return url;
   }
 
@@ -149,6 +188,7 @@ export class TraveltimeQuery {
     if (isDef(this._distdeg)) { url = url+this.makeParam("distdeg", this.distdeg());}
     if (isDef(this._model)) { url = url+this.makeParam("model", this.model());}
     if (isDef(this._phases)) { url = url+this.makeParam("phases", this.phases());}
+    if (isDef(this._format)) { url = url+this.makeParam("format", this.format());}
     if (url.endsWith('&') || url.endsWith('?')) {
       url = url.substr(0, url.length-1); // zap last & or ?
     }
@@ -156,53 +196,23 @@ export class TraveltimeQuery {
   }
 
 
-  queryTauPVersion() :string {
-    let mythis = this;
-    let promise = new RSVP.Promise(function(resolve, reject) {
-      let client = new XMLHttpRequest();
-      let url = mythis.formTauPVersionURL();
-      client.open("GET", url);
-      client.onreadystatechange = handler;
-      client.responseType = "text";
-      client.setRequestHeader("Accept", "text/plain");
-      client.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) { resolve(this.response); }
-          else { reject(this); }
+  queryTauPVersion() :Promise<string> {
+    return fetch(this.formTauPVersionURL())
+      .then(response => {
+        if (response.ok) {
+          return response.text();
+        } else {
+          throw new Error("Fetching over network was not ok: "+response.status+" "+response.statusText);
         }
-      }
-    });
-    return promise;
+      });
   }
 
   formTauPVersionURL() :string {
     return this.formBaseURL()+'taupversion';
   }
 
-  queryWADL() :Promise<string> {
-    let mythis = this;
-    let promise = new RSVP.Promise(function(resolve, reject) {
-      let client = new XMLHttpRequest();
-      let url = mythis.formWADLURL();
-      client.open("GET", url);
-      client.onreadystatechange = handler;
-      client.responseType = "text";
-      client.setRequestHeader("Accept", "application/xml");
-      client.send();
 
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) { resolve(this.response); }
-          else { reject(this); }
-        }
-      }
-    });
-    return promise;
-  }
-
-  formWADLURL() :string {
+  formWadlURL() :string {
     return this.formBaseURL()+'application.wadl';
   }
 }
