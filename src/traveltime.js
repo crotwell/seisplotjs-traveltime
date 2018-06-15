@@ -36,6 +36,8 @@ export class TraveltimeQuery {
   _evlon: number;
   /** @private */
   _format: string;
+  /** @private */
+  _noheader: boolean;
   constructor(host :?string) {
     this._specVersion = "1";
     this._protocol = 'http:';
@@ -45,6 +47,7 @@ export class TraveltimeQuery {
       this._host = host;
     }
     this._format = JSON_FORMAT;
+    this._noheader = false; // only for text format
   }
   protocol(value?: string) :string | TraveltimeQuery {
     return hasArgs(value) ? (this._protocol = value, this) : this._protocol;
@@ -81,6 +84,9 @@ export class TraveltimeQuery {
   }
   format(value?: string) :string | TraveltimeQuery {
     return hasArgs(value) ? (this._format = value, this) : this._format;
+  }
+  noheader(value?: boolean) :boolean | TraveltimeQuery {
+    return hasArgs(value) ? (this._noheader = value, this) : this._noheader;
   }
   convertToArrival(ttimeline :string) {
     let items = ttimeline.trim().split(/\s+/);
@@ -177,7 +183,9 @@ export class TraveltimeQuery {
 
   formURL() :string {
     let url = this.formBaseURL()+'query?';
-    url = url +"noheader=true&";
+    if (isDef(this._noheader) && this._noheader) {
+      url = url +"noheader=true&";
+    }
     if (isDef(this._evdepth)) { url = url+this.makeParam("evdepth", this.evdepth()); }
     if (isDef(this._stalat) && isDef(this._stalon)) {
       url = url+this.makeParam("staloc", "["+stringify(this.stalat())+","+stringify(this.stalon())+"]");

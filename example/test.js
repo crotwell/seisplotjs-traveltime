@@ -11,7 +11,7 @@ d3.select("div.url")
     .append("p")
     .text("URL: "+query.formURL());
 query.queryJson().then(function(times) {
-console.log(" times model:"+times.model+" arrivals:"+times.arrivals.length);
+  console.log(" times model:"+times.model+" arrivals:"+times.arrivals.length);
   d3.select("div.traveltimes")
     .selectAll("p")
     .data(times.arrivals)
