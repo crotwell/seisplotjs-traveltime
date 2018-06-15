@@ -8,9 +8,9 @@ test("formURL", () => {
     .phases("P,S,PcP,PKiKP,PKPPKP");
   let url = query.formURL();
   expect(url).toBeDefined();
-  // noheader is first, so no &
-  expect(url).toContain('?noheader=');
-  for(const k of ['evdepth', 'staloc', 'evloc',
+  // evdepth is first, so no &
+  expect(url).toContain('?evdepth=');
+  for(const k of ['staloc', 'evloc',
    'phases', 'format']) {
      expect(url).toContain('&'+k+'=');
    }
